@@ -3,8 +3,8 @@
 ###  Preface
 
 #### 1 Obtain your APPID and SecretKey.
-
-> Example: `AppID`="OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz"  `SecretKey`="zL2gkc8plUqBZObiICG5qdIbmwAr16ps"
+Example:
+> `AppID`="9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn"  `SecretKey`="Dmg40YVklLzHLc7K1D3TZQKuHp5mzhYW"
 
 #### 2 Prepare an encryption method for `HMAC-SHA1`
 Example for java:
@@ -31,85 +31,96 @@ public static String hmacSHA1ToBase64(String key, String content) {
 
 #### step.1 build keyTime(Validity period of sign):
 `keyTime=startTimestampSecond+";"+endTimestampSecond`
-> Example: `keyTime`="1581782400;1581786000"
+
+Example: 
+> `keyTime`="1581782400;1581786000"
 
 #### step.2 build signKey
 `signKey=HMAC-SHA1(SecretKey, KeyTime)`
 
-> Example: `signKey`=HMAC-SHA1('zL2gkc8plUqBZObiICG5qdIbmwAr16ps','1581782400;1581786000') => '3368ElqG0cSjECtfLkJt2bl240c='
+Example: 
+> `signKey`=HMAC-SHA1('Dmg40YVklLzHLc7K1D3TZQKuHp5mzhYW','1581782400;1581786000') => 'AKVN4wrJCelZ2JG2R6XD7lYKFdI='
 
 #### step.3 obtain signContent
 
-> Signature related fields: `appId`,`keyTime`,`sign`
+Signature related fields: `appId`,`keyTime`,`sign`
 
 ##### 3.1 Signature related fields are on QueryString
 
-> Arrange the request parameters in ascending order of the key field and splice them into: `k1=v1&k2=v2&k3=v3&...`(exculde fields: keyTime,sign)
+Arrange the request parameters in ascending order of the key field and splice them into: `k1=v1&k2=v2&k3=v3&...`(exculde fields: `keyTime`,`sign`)
 
-> Note: Because the QueryString parameter may have special characters, it is recommended to urlEncode，
+> Note: <br>Because the QueryString parameter may have special characters, it is recommended to urlEncode,
 > As above, splicing QueryString parameters into:`urlEncode(k1)=urlEncode(v1)&urlEncode(k2)=urlEncode(v2)&urlEncode(k3)=urlEncode(v3)&...`
 
 Example: 
-PUT https://{DOMAIN}/demo/user/1001?appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&keyTime=1581782400;1581786000&newPwd=123&newName=Dean&sign=SWWdcOeBQDDMQvSHgnZxfZOJoI0%3D
 
-> `signContent`="appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&newName=Dean&newPwd=123"
+```
+PUT https://{DOMAIN}/demo/user/1001?appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&keyTime=1581782400;1581786000&newPwd=123&newName=Dean&sign=SWWdcOeBQDDMQvSHgnZxfZOJoI0%3D
+```
+
+> `signContent`="appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&newName=Dean&newPwd=123"
 
 ##### 3.2 Signature related fields are on request Body
 
-> Arrange the payload parameters in ascending order of the key field and splice them into: `k1=v1&k2=v2&k3=v3&...`(exculde fields: keyTime,sign)
+Arrange the payload parameters in ascending order of the key field and splice them into: `k1=v1&k2=v2&k3=v3&...`(exculde fields: `keyTime`,`sign`)
 
 Example: 
 ```
 PUT https://{DOMAIN}/demo/user/1001
 request body:
 {
-    "appId":"OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz",
+    "appId":"9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn",
     "newPwd":"123",
     "newName":"Dean",
     "keyTime":"1581782400;1581786000",
-    "sign":"SWWdcOeBQDDMQvSHgnZxfZOJoI0="
+    "sign":"dIMjxgE7gHjPWlAKY4eIgI0i98Y="
 }
 ```
-> `signContent`="appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&newName=Dean&newPwd=123"
+> `signContent`="appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&newName=Dean&newPwd=123"
 
 
 #### step.4 build signature
 `signature=HMAC-SHA1(signKey, signContent)`
-> Example: `signature`=HMAC-SHA1('srP+FDEc8c1xVqaXoYP7dlRDQBc=', `signContent`) => 'SWWdcOeBQDDMQvSHgnZxfZOJoI0='
+
+Example:
+>  `signature`=HMAC-SHA1('AKVN4wrJCelZ2JG2R6XD7lYKFdI=', `signContent`) => 'dIMjxgE7gHjPWlAKY4eIgI0i98Y='
 
 
 ### For Example:
 
 #### 1 Signature related fields are on QueryString
 
-> Example: PUT https://{DOMAIN}/demo/user/1001?appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&keyTime=1581782400;1581786000&newPwd=123&newName=Dean&sign=SWWdcOeBQDDMQvSHgnZxfZOJoI0%3D
+Example: 
 
-```
-`appId`="OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz"
+```json
+PUT https://{DOMAIN}/demo/user/1001?appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&keyTime=1581782400;1581786000&newPwd=123&newName=Dean&sign=dIMjxgE7gHjPWlAKY4eIgI0i98Y%3D
+
+`appId`="9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn"
 `keyTime`="1581782400;1581786000"
-==> build `signKey`="3368ElqG0cSjECtfLkJt2bl240c="
-==> obtain `signContent`="appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&newName=Dean&newPwd=123"
-==> build  `signature`="SWWdcOeBQDDMQvSHgnZxfZOJoI0="
+==> build `signKey`="AKVN4wrJCelZ2JG2R6XD7lYKFdI=="
+==> obtain `signContent`="appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&newName=Dean&newPwd=123"
+==> build  `signature`="dIMjxgE7gHjPWlAKY4eIgI0i98Y="
 
 ```
 
 #### 2 Signature related fields are on request Body
 Example: 
-```
+
+```json
 PUT https://{DOMAIN}/demo/user/1001
 request body:
 {
-    "appId":"OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz",
+    "appId":"9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn",
     "newPwd":"123",
     "newName":"Dean",
     "keyTime":"1581782400;1581786000",
-    "sign":"SWWdcOeBQDDMQvSHgnZxfZOJoI0="
+    "sign":"dIMjxgE7gHjPWlAKY4eIgI0i98Y="
 }
 
-`appId`="OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz"
+`appId`="9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn"
 `keyTime`="1581782400;1581786000"
-==> build `signKey`="3368ElqG0cSjECtfLkJt2bl240c="
-==> obtain `signContent`="appId=OOOb9l9qWyzBP2OuYHaqgtG8R3o8v1jz&newName=Dean&newPwd=123"
-==> build  `signature`="SWWdcOeBQDDMQvSHgnZxfZOJoI0="
+==> build `signKey`="AKVN4wrJCelZ2JG2R6XD7lYKFdI=="
+==> obtain `signContent`="appId=9ft8PvZ1ZQK6vpBJ8JnEFvqIQbWe0yKn&newName=Dean&newPwd=123"
+==> build  `signature`="dIMjxgE7gHjPWlAKY4eIgI0i98Y="
 ```
 
