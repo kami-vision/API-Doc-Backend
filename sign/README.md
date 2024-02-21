@@ -32,7 +32,7 @@ public static String hmacSHA1ToBase64(String key, String content) {
 #### step.1 build keyTime(Validity period of sign):
 `keyTime=startTimestampSecond+";"+endTimestampSecond`
 
-**please note that: startTimestampSecond should be greater than current time(ex: `startTimestampSecond=currentTimeSecond+10s`)
+**please note that: startTimestampSecond should be greater than current time(ex: `startTimestampSecond=currentTimeSecond-10s`)
 ,because our service will verify the validate of this**
 
 Example: 
