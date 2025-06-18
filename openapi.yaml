@@ -1,0 +1,1640 @@
+openapi: 3.0.0
+info:
+  title: Kami Care API
+  version: 1.0.0
+  description: Kami Care API Documentation
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentication using JWT token
+    clientAuth:
+      type: apiKey
+      in: header
+      name: Client-Id
+      description: Client ID (web for web client, app for app client)
+    partnerAuth:
+      type: apiKey
+      in: header
+      name: partner-id
+      description: Partner ID (fixed as kamicare)
+  parameters:
+    authorizationHeader:
+      name: Authorization
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Bearer token authentication (access_token)
+    clientIdHeader:
+      name: Client-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        enum: [web, app]
+      description: Client ID (web for web client, app for app client)
+    partnerIdHeader:
+      name: partner-id
+      in: header
+      required: true
+      schema:
+        type: string
+        default: kamicare
+      description: Partner ID (fixed as kamicare)
+
+paths:
+  # User Management APIs
+  /users/tokens:
+    get:
+      summary: User Authentication
+      description: Get user access token
+      security:
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: password
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: grant_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [password]
+        - name: scope
+          in: query
+          required: true
+          schema:
+            type: string
+            default: openid
+      responses:
+        '200':
+          description: Successfully obtained token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+                    example: 86400
+                  refresh_expires_in:
+                    type: integer
+                    example: 604800
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  not-before-policy:
+                    type: integer
+                    example: 1728476742
+                  session_state:
+                    type: string
+                    example: f4d8f277-4f4d-4fe6-a499-c7b9c5aa3936
+                  scope:
+                    type: string
+                    example: openid email profile
+                  loc_roles:
+                    type: array
+                    items:
+                      type: string
+                    example: ["/0c3e9309-62cb-489f-b12c-16818befb374/2e5d66b5-8d76-4010-a9c8-158cf46d20aa/admin"]
+
+  /users/{user_id}/credentials:
+    put:
+      summary: Update Password
+      description: Update user password
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - current_password
+                - new_password
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                  description: Current password
+                new_password:
+                  type: string
+                  format: password
+                  description: New password
+      responses:
+        '200':
+          description: Password updated successfully
+
+  /users/emails/{email}/reset-password:
+    post:
+      summary: Reset Password
+      description: Send password reset link to user email
+      security:
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+          description: User email
+      responses:
+        '200':
+          description: Password reset link sent successfully
+
+  /users/{user_id}:
+    put:
+      summary: Update User Information
+      description: Update existing user information
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email
+                first_name:
+                  type: string
+                  description: User first name
+                last_name:
+                  type: string
+                  description: User last name
+                phone:
+                  type: string
+                  description: User phone
+      responses:
+        '200':
+          description: User information updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  phone:
+                    type: string
+
+  # Organization Management APIs
+  /orgs:
+    get:
+      summary: Get Organization List
+      description: Get all organizations for the current user
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+      responses:
+        '200':
+          description: Successfully retrieved organization list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    description:
+                      type: string
+    post:
+      summary: Create Organization
+      description: Create a new organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Organization name
+                description:
+                  type: string
+                  description: Organization description
+      responses:
+        '201':
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+    delete:
+      summary: Delete Organization
+      description: Delete an existing organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: orgId
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Organization ID to delete
+      responses:
+        '204':
+          description: Organization deleted successfully
+
+  /orgs/{org_id}/invite-user:
+    post:
+      summary: Invite User
+      description: Invite user to join organization and assign specific roles
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - roles
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User email
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  description: User role list
+      responses:
+        '201':
+          description: User invitation successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  email:
+                    type: string
+                  roles:
+                    type: array
+                    items:
+                      type: string
+
+  # Location Management APIs
+  /orgs/{org_id}/locations:
+    post:
+      summary: Create Location
+      description: Create a new root-level location; add records to location table and location hierarchy table
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Location name
+                description:
+                  type: string
+                  description: Location description
+                parent_id:
+                  type: string
+                  description: Parent location ID (optional, for creating sub-locations)
+      responses:
+        '201':
+          description: Location created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+
+  /orgs/{org_id}/locations/list:
+    post:
+      summary: Get Location List
+      description: Search and list location-role mappings for the current user in a specific organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+                  description: Search keyword
+                page:
+                  type: integer
+                  description: Page number
+                page_size:
+                  type: integer
+                  description: Items per page
+      responses:
+        '200':
+          description: Successfully retrieved location list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        parent_id:
+                          type: string
+                        role:
+                          type: string
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+
+  /orgs/{org_id}/locations/delete:
+    post:
+      summary: Delete Locations
+      description: Delete multiple existing locations and all their sub-locations and associated resources
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - location_ids
+              properties:
+                location_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of location IDs to delete
+      responses:
+        '200':
+          description: Locations deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted_count:
+                    type: integer
+                    description: Number of successfully deleted locations
+
+  # Sub-location Management APIs
+  /orgs/{org_id}/locations/{loc_id}/sub-locations:
+    get:
+      summary: Get Sub-location List
+      description: Get all sub-locations under a specific parent location up to a specified depth
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parent location ID
+        - name: depth
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Depth to get sub-locations
+      responses:
+        '200':
+          description: Successfully retrieved sub-location list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sub_locations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        parent_id:
+                          type: string
+                        depth:
+                          type: integer
+                        role:
+                          type: string
+    post:
+      summary: Create Sub-location
+      description: Create a new sub-location under the specified parent location; add records to location table and location hierarchy table
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parent location ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Sub-location name
+                description:
+                  type: string
+                  description: Sub-location description
+      responses:
+        '201':
+          description: Sub-location created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  parent_id:
+                    type: string
+                  depth:
+                    type: integer
+    delete:
+      summary: Delete Sub-location
+      description: Delete multiple existing sub-locations from the tree
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Parent location ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sub_location_ids
+              properties:
+                sub_location_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of sub-location IDs to delete
+      responses:
+        '200':
+          description: Sub-locations deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted_count:
+                    type: integer
+                    description: Number of successfully deleted sub-locations
+
+  # Group Management APIs
+  /orgs/{org_id}/locations/{loc_id}/groups:
+    post:
+      summary: Create Group
+      description: Create a new group in the specified location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Group name
+                description:
+                  type: string
+                  description: Group description
+                type:
+                  type: string
+                  description: Group type
+      responses:
+        '201':
+          description: Group created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  type:
+                    type: string
+                  location_id:
+                    type: string
+
+  /orgs/{org_id}/locations/{loc_id}/groups/list:
+    post:
+      summary: Get Group List
+      description: Get all groups in the specified location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+                  description: Search keyword
+                page:
+                  type: integer
+                  description: Page number
+                page_size:
+                  type: integer
+                  description: Items per page
+      responses:
+        '200':
+          description: Successfully retrieved group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        type:
+                          type: string
+                        location_id:
+                          type: string
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+
+  /orgs/{org_id}/locations/{loc_id}/groups/delete:
+    delete:
+      summary: Delete Group
+      description: Delete the specified group
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: group_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Group ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - group_id
+              properties:
+                group_id:
+                  type: string
+                  description: Group ID to delete
+      responses:
+        '200':
+          description: Group deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted_count:
+                    type: integer
+                    description: Number of successfully deleted groups
+
+  # Device Management APIs
+  /orgs/{org_id}/locations/{loc_id}/devices/{d_id}:
+    get:
+      summary: Get Device Details
+      description: Get detailed information about an existing device in the organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: d_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Device ID
+      responses:
+        '200':
+          description: Successfully retrieved device details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  location_id:
+                    type: string
+                  organization_id:
+                    type: string
+                  metadata:
+                    type: object
+                    additionalProperties: true
+    delete:
+      summary: Delete Device
+      description: Remove an existing device from the location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: d_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Device ID
+      responses:
+        '204':
+          description: Device deleted successfully
+    patch:
+      summary: Update Device
+      description: Update an existing device in the location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: d_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Device ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Device name
+                status:
+                  type: string
+                  description: Device status
+                metadata:
+                  type: object
+                  description: Device metadata
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Device updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  location_id:
+                    type: string
+                  organization_id:
+                    type: string
+                  metadata:
+                    type: object
+                    additionalProperties: true
+
+  /v2/orgs/{org_id}/locations/{loc_id}/devices:
+    get:
+      summary: Get Device List
+      description: Get all Kami and third-party camera devices in the organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [kami, third_party]
+          description: Device type filter
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Device status filter
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Page number
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Items per page
+      responses:
+        '200':
+          description: Successfully retrieved device list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                        status:
+                          type: string
+                        location_id:
+                          type: string
+                        organization_id:
+                          type: string
+                        metadata:
+                          type: object
+                          additionalProperties: true
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+
+  # User Role Management APIs
+  /orgs/{org_id}/locations/{loc_id}/users:
+    post:
+      summary: Get User Role List
+      description: Get user role list for the specified location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  description: Page number
+                page_size:
+                  type: integer
+                  description: Items per page
+      responses:
+        '200':
+          description: Successfully retrieved user role list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                        email:
+                          type: string
+                        roles:
+                          type: array
+                          items:
+                            type: string
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+
+  /orgs/{org_id}/locations/{loc_id}/users/{user_id}:
+    delete:
+      summary: Remove User Role
+      description: Remove user role from the specified location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '204':
+          description: User role removed successfully
+    patch:
+      summary: Update User Role
+      description: Update user role in the specified location
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roles
+              properties:
+                roles:
+                  type: array
+                  items:
+                    type: string
+                  description: New role list
+      responses:
+        '200':
+          description: User role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+                  roles:
+                    type: array
+                    items:
+                      type: string
+
+  # Event Management APIs
+  /orgs/{org_id}/locations/{loc_id}/events:
+    post:
+      summary: Query Events
+      description: Retrieve organization events using filters
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start_time:
+                  type: integer
+                  description: Start timestamp
+                end_time:
+                  type: integer
+                  description: End timestamp
+                event_type:
+                  type: string
+                  description: Event type
+                device_id:
+                  type: string
+                  description: Device ID
+                page:
+                  type: integer
+                  description: Page number
+                page_size:
+                  type: integer
+                  description: Items per page
+      responses:
+        '200':
+          description: Successfully retrieved event list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_count:
+                    type: integer
+                    description: Total event count
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Event ID
+                        org_id:
+                          type: string
+                          description: Organization ID
+                        loc_id:
+                          type: string
+                          description: Location ID
+                        d_id:
+                          type: string
+                          description: Device ID
+                        event_type_name:
+                          type: string
+                          description: Event type name
+                        start_time:
+                          type: integer
+                          description: Start timestamp
+                        end_time:
+                          type: integer
+                          description: End timestamp
+                        event_time:
+                          type: integer
+                          description: Event timestamp
+                        file_type:
+                          type: string
+                          description: File type
+                        file_url:
+                          type: string
+                          description: File URL
+                        subject:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: Subject ID
+                              age:
+                                type: integer
+                                description: Age
+                              first_name:
+                                type: string
+                                description: First name
+                              last_name:
+                                type: string
+                                description: Last name
+                              relationship:
+                                type: string
+                                description: Relationship
+                              specific_relationship:
+                                type: string
+                                description: Specific relationship
+                        video_storage_status:
+                          type: boolean
+                          description: Video storage status
+                        event_acknowledgement:
+                          type: object
+                          nullable: true
+                          description: Event acknowledgement information
+                        device:
+                          type: object
+                          properties:
+                            d_id:
+                              type: string
+                              description: Device ID
+                            sub_loc_name:
+                              type: string
+                              description: Sub-location name
+                            sub_loc_id:
+                              type: string
+                              description: Sub-location ID
+                            name:
+                              type: string
+                              description: Device name
+                            device_type:
+                              type: string
+                              description: Device type
+                        metadata:
+                          type: object
+                          nullable: true
+                          description: Metadata
+                        is_event_confirmed:
+                          type: boolean
+                          description: Event confirmed status
+                        video_upload_status:
+                          type: string
+                          description: Video upload status
+                        event_category:
+                          type: string
+                          description: Event category
+    delete:
+      summary: Delete Organization Events
+      description: Delete organization events
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event_ids
+              properties:
+                event_ids:
+                  type: array
+                  items:
+                    type: string
+                  description: List of event IDs to delete
+      responses:
+        '204':
+          description: Events deleted successfully
+
+  /orgs/{org_id}/locations/{loc_id}/events/{event_id}:
+    delete:
+      summary: Delete Specific Event
+      description: Delete specific event from the organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Event ID
+      responses:
+        '204':
+          description: Event deleted successfully
+
+  /orgs/{org_id}/location/{loc_id}/events/{event_id}/requestVideo:
+    post:
+      summary: Request Video Upload
+      description: Indicate device to upload video of specified duration
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Event ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - start_time
+                - end_time
+              properties:
+                start_time:
+                  type: string
+                  format: date-time
+                  description: Start time
+                end_time:
+                  type: string
+                  format: date-time
+                  description: End time
+      responses:
+        '200':
+          description: Video request successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  org_id:
+                    type: string
+                    description: Organization ID
+                  loc_id:
+                    type: string
+                    description: Location ID
+                  event_id:
+                    type: string
+                    description: Event ID
+                  start_time:
+                    type: string
+                    format: date-time
+                    description: Start time
+                  end_time:
+                    type: string
+                    format: date-time
+                    description: End time
+                  request_type:
+                    type: string
+                    description: Request type
+                    example: manual_upload
+                  request_status:
+                    type: string
+                    description: Request status
+                    example: completed
+
+  /orgs/{org_id}/locations/{loc_id}/events/{event_id}/streaming-url:
+    get:
+      summary: Get Video Stream URL
+      description: Get video stream URL for device event in the organization
+      security:
+        - bearerAuth: []
+        - clientAuth: []
+        - partnerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/authorizationHeader'
+        - $ref: '#/components/parameters/clientIdHeader'
+        - $ref: '#/components/parameters/partnerIdHeader'
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Organization ID
+        - name: loc_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Location ID
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Event ID
+      responses:
+        '200':
+          description: Successfully retrieved video stream URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  video_url:
+                    type: string
+                    format: uri
+                    description: Video stream URL
+                    example: https://domain.com/video/123
+                  earliest_time:
+                    type: integer
+                    description: Earliest accessable timestamp
+                    example: 1632893011
+                  time_left:
+                    type: integer
+                    description: Remaining accessable time (seconds)
+                    example: 10
