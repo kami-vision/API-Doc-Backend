@@ -286,7 +286,7 @@ paths:
                   type: string
                   description: Organization description
       responses:
-        '201':
+        '200':
           description: Organization created successfully
           content:
             application/json:
@@ -358,7 +358,7 @@ paths:
                     type: string
                   description: User role list
       responses:
-        '201':
+        '200':
           description: User invitation successful
           content:
             application/json:
@@ -412,7 +412,7 @@ paths:
                   type: string
                   description: Parent location ID (optional, for creating sub-locations)
       responses:
-        '201':
+        '200':
           description: Location created successfully
           content:
             application/json:
@@ -630,7 +630,7 @@ paths:
                   type: string
                   description: Sub-location description
       responses:
-        '201':
+        '200':
           description: Sub-location created successfully
           content:
             application/json:
@@ -740,7 +740,7 @@ paths:
                   type: string
                   description: Group type
       responses:
-        '201':
+        '200':
           description: Group created successfully
           content:
             application/json:
